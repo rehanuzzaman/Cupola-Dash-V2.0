@@ -290,6 +290,28 @@ function AdvancedScene({ tasks, onTaskComplete, astronautPosition, onAstronautMo
       <directionalLight position={[10, 10, 5]} intensity={1.2} castShadow />
       <pointLight position={[0, 0, 0]} intensity={0.8} color="#ffffff" />
 
+      {/* Earth in the background */}
+      <mesh position={[0, 0, -20]}>
+        <sphereGeometry args={[6, 32, 32]} />
+        <meshStandardMaterial 
+          color="#4A90E2" 
+          metalness={0.1} 
+          roughness={0.8}
+          emissive="#1a365d"
+          emissiveIntensity={0.1}
+        />
+      </mesh>
+
+      {/* Earth atmosphere */}
+      <mesh position={[0, 0, -20]}>
+        <sphereGeometry args={[6.2, 32, 32]} />
+        <meshBasicMaterial 
+          color="#87CEEB" 
+          transparent 
+          opacity={0.3} 
+        />
+      </mesh>
+
       <AdvancedAstronaut position={astronautPosition} onPositionChange={onAstronautMove} hasTools={hasTools} />
       <SpaceStation tasks={tasks} onTaskComplete={onTaskComplete} />
 
@@ -459,22 +481,30 @@ export default function SpacewalkPage() {
             </Button>
           </Link>
           <div className="flex items-center space-x-4 text-white">
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-100 border-purple-400/50">
+            <Badge variant="secondary" className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0">
               <Wrench className="w-4 h-4 mr-1" />
-              Advanced Spacewalk
+              EVA Spacewalk
             </Badge>
-            <div className="flex items-center space-x-2 text-sm">
-              <Timer className="w-4 h-4" />
-              <span>{formatTime(totalTime)}</span>
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 px-3 py-2 rounded-lg border border-blue-400/50">
+              <Timer className="w-4 h-4 text-blue-300" />
+              <span className="text-sm font-bold text-blue-300">Time:</span>
+              <span className="text-lg font-bold text-blue-400">{formatTime(totalTime)}</span>
             </div>
-            <div className="text-sm">
-              O₂:{" "}
-              <span className={`font-bold ${oxygenLevel < 30 ? "text-red-400" : "text-cyan-300"}`}>
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg border ${
+              oxygenLevel < 30 ? "bg-gradient-to-r from-red-600/30 to-pink-600/30 border-red-400/50" : "bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border-cyan-400/50"
+            }`}>
+              <span className="text-sm font-bold text-white">O₂:</span>
+              <span className={`text-lg font-bold ${oxygenLevel < 30 ? "text-red-400" : "text-cyan-400"}`}>
                 {Math.round(oxygenLevel)}%
               </span>
             </div>
-            <div className={`text-xs px-2 py-1 rounded-full ${hasTools ? 'bg-yellow-600/20 text-yellow-400' : 'bg-gray-600/20 text-gray-400'}`}>
-              <span className="font-bold">{hasTools ? '🛠️ Tools' : '❌ No Tools'}</span>
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg border ${
+              hasTools ? "bg-gradient-to-r from-yellow-600/30 to-orange-600/30 border-yellow-400/50" : "bg-gradient-to-r from-gray-600/30 to-slate-600/30 border-gray-400/50"
+            }`}>
+              <span className="text-sm font-bold text-white">Tools:</span>
+              <span className={`text-lg font-bold ${hasTools ? "text-yellow-400" : "text-gray-400"}`}>
+                {hasTools ? '🛠️ Ready' : '❌ Missing'}
+              </span>
             </div>
           </div>
         </div>
@@ -525,8 +555,14 @@ export default function SpacewalkPage() {
             )}
 
             <div className="absolute bottom-4 left-4 right-4">
-              <Card className="bg-card/90 backdrop-blur-sm border-purple-400/30 shadow-lg shadow-purple-500/20">
-                <CardContent className="p-4">
+              <Card className="bg-gradient-to-br from-purple-900/90 to-indigo-900/90 backdrop-blur-sm border-purple-400/30 shadow-lg shadow-purple-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-sm text-center">EVA Movement Controls</CardTitle>
+                  <CardDescription className="text-purple-200 text-xs text-center">
+                    Use thrusters to navigate in space • Earth visible in background
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
                   <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto">
                     <div></div>
                     <Button
@@ -540,9 +576,12 @@ export default function SpacewalkPage() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
+                      className="bg-gradient-to-b from-purple-500/30 to-purple-600/40 hover:from-purple-500/40 hover:to-purple-600/50 active:from-purple-500/50 active:to-purple-600/60 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
                     >
-                      ↑ UP
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg">↑</span>
+                        <span className="text-xs">UP</span>
+                      </div>
                     </Button>
                     <Button
                       onTouchStart={(e) => {

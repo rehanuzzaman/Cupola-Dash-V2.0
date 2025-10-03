@@ -8,15 +8,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Zap, Target, Timer, RotateCcw } from "lucide-react"
+import { ArrowLeft, Zap, Target, Timer, RotateCcw, Settings, Waves, Moon, Weight } from "lucide-react"
 import * as THREE from "three"
 
-// Training objectives
+// Training objectives with underwater and lunar challenges
 const trainingObjectives = [
-  { id: 1, name: "Navigate to Tool Station", position: [3, 2, 0], completed: false },
-  { id: 2, name: "Collect Wrench", position: [-2, 3, 1], completed: false },
-  { id: 3, name: "Reach Solar Panel", position: [0, -2, 2], completed: false },
-  { id: 4, name: "Return to Airlock", position: [0, 0, 0], completed: false },
+  { id: 1, name: "Navigate to Tool Station", position: [3, 2, 0], completed: false, type: "basic" },
+  { id: 2, name: "Collect Wrench", position: [-2, 3, 1], completed: false, type: "basic" },
+  { id: 3, name: "Reach Solar Panel", position: [0, -2, 2], completed: false, type: "basic" },
+  { id: 4, name: "Return to Airlock", position: [0, 0, 0], completed: false, type: "basic" },
+  { id: 5, name: "Underwater Hatch Entry", position: [2, -3, -1], completed: false, type: "underwater" },
+  { id: 6, name: "Repair Work Underwater", position: [-3, -2, 1], completed: false, type: "underwater" },
+  { id: 7, name: "Lunar Sample Collection", position: [0, 4, 0], completed: false, type: "lunar" },
+  { id: 8, name: "Lunar Tool Usage", position: [-4, 0, 2], completed: false, type: "lunar" },
 ]
 
 function Astronaut({
@@ -221,6 +225,10 @@ export default function NBLTrainingPage() {
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [gameStarted, setGameStarted] = useState(false)
   const [completedObjectives, setCompletedObjectives] = useState(0)
+  const [showWeightControls, setShowWeightControls] = useState(false)
+  const [trainingEnvironment, setTrainingEnvironment] = useState<'space' | 'underwater' | 'lunar'>('space')
+  const [weight, setWeight] = useState(0) // 0 = neutral, positive = heavy, negative = light
+  const [buoyancy, setBuoyancy] = useState(0) // 0 = neutral, positive = float, negative = sink
 
   // Timer
   useEffect(() => {
@@ -292,6 +300,52 @@ export default function NBLTrainingPage() {
     setTimeElapsed(0)
     setGameStarted(false)
     setCompletedObjectives(0)
+    setWeight(0)
+    setBuoyancy(0)
+    setTrainingEnvironment('space')
+  }
+
+  const adjustWeight = (newWeight: number) => {
+    setWeight(newWeight)
+    // Apply weight effects to movement
+    if (newWeight > 0) {
+      // Heavy - slower movement, more momentum
+      console.log(`Weight increased: ${newWeight} - Movement will be slower`)
+    } else if (newWeight < 0) {
+      // Light - faster movement, less momentum
+      console.log(`Weight decreased: ${newWeight} - Movement will be faster`)
+    }
+  }
+
+  const adjustBuoyancy = (newBuoyancy: number) => {
+    setBuoyancy(newBuoyancy)
+    // Apply buoyancy effects
+    if (newBuoyancy > 0) {
+      // Float - upward force
+      console.log(`Buoyancy increased: ${newBuoyancy} - Tendency to float`)
+    } else if (newBuoyancy < 0) {
+      // Sink - downward force
+      console.log(`Buoyancy decreased: ${newBuoyancy} - Tendency to sink`)
+    }
+  }
+
+  const changeEnvironment = (environment: 'space' | 'underwater' | 'lunar') => {
+    setTrainingEnvironment(environment)
+    // Reset weight/buoyancy for new environment
+    switch (environment) {
+      case 'space':
+        setWeight(0)
+        setBuoyancy(0)
+        break
+      case 'underwater':
+        setWeight(0)
+        setBuoyancy(0.5) // Slight positive buoyancy underwater
+        break
+      case 'lunar':
+        setWeight(-0.6) // 1/6 Earth gravity
+        setBuoyancy(0)
+        break
+    }
   }
 
   const formatTime = (seconds: number) => {
@@ -338,16 +392,45 @@ export default function NBLTrainingPage() {
             </Button>
           </Link>
           <div className="flex items-center space-x-4 text-white">
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-100 border-purple-400/50">
+            <Badge variant="secondary" className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0">
               <Zap className="w-4 h-4 mr-1" />
-              Space Training
+              NBL Space Training
             </Badge>
-            <div className="flex items-center space-x-2 text-sm">
-              <Timer className="w-4 h-4" />
-              <span>{formatTime(timeElapsed)}</span>
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 px-3 py-2 rounded-lg border border-blue-400/50">
+              <Timer className="w-4 h-4 text-blue-300" />
+              <span className="text-sm font-bold text-blue-300">Time:</span>
+              <span className="text-lg font-bold text-blue-400">{formatTime(timeElapsed)}</span>
             </div>
-            <div className="text-sm">
-              Score: <span className="font-bold text-purple-300">{score}</span>
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-purple-600/30 to-pink-600/30 px-3 py-2 rounded-lg border border-purple-400/50">
+              <span className="text-sm font-bold text-purple-300">Score:</span>
+              <span className="text-lg font-bold text-purple-400">{score}</span>
+            </div>
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-green-600/30 to-emerald-600/30 px-3 py-2 rounded-lg border border-green-400/50">
+              <Target className="w-4 h-4 text-green-300" />
+              <span className="text-sm font-bold text-green-300">Objectives:</span>
+              <span className="text-lg font-bold text-green-400">{completedObjectives}/{objectives.length}</span>
+            </div>
+            
+            {/* Weight/Buoyancy Controls */}
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => setShowWeightControls(!showWeightControls)}
+                variant="outline"
+                size="sm"
+                className="bg-gradient-to-r from-orange-600/30 to-red-600/30 border-orange-400/50 text-white hover:from-orange-500/40 hover:to-red-500/40"
+              >
+                <Weight className="w-4 h-4 mr-1" />
+                Weight: {weight > 0 ? '+' : ''}{weight.toFixed(1)}
+              </Button>
+              <Button
+                onClick={() => setShowWeightControls(!showWeightControls)}
+                variant="outline"
+                size="sm"
+                className="bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border-cyan-400/50 text-white hover:from-cyan-500/40 hover:to-blue-500/40"
+              >
+                <Waves className="w-4 h-4 mr-1" />
+                Buoyancy: {buoyancy > 0 ? '+' : ''}{buoyancy.toFixed(1)}
+              </Button>
             </div>
           </div>
         </div>
@@ -368,8 +451,14 @@ export default function NBLTrainingPage() {
 
             {/* Movement Controls Overlay */}
             <div className="absolute bottom-4 left-4 right-4">
-              <Card className="bg-card/90 backdrop-blur-sm border-cyan-400/30 shadow-lg shadow-cyan-500/20">
-                <CardContent className="p-4">
+              <Card className="bg-gradient-to-br from-purple-900/90 to-indigo-900/90 backdrop-blur-sm border-purple-400/30 shadow-lg shadow-purple-500/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-sm text-center">Space Movement Controls</CardTitle>
+                  <CardDescription className="text-purple-200 text-xs text-center">
+                    Use thrusters to navigate in zero gravity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
                   <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto">
                     {/* Top Row */}
                     <div></div>
@@ -384,9 +473,12 @@ export default function NBLTrainingPage() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
+                      className="bg-gradient-to-b from-purple-500/30 to-purple-600/40 hover:from-purple-500/40 hover:to-purple-600/50 active:from-purple-500/50 active:to-purple-600/60 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
                     >
-                      ↑ UP
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg">↑</span>
+                        <span className="text-xs">UP</span>
+                      </div>
                     </Button>
                     <Button
                       onTouchStart={(e) => {
@@ -399,9 +491,12 @@ export default function NBLTrainingPage() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
+                      className="bg-gradient-to-b from-purple-500/30 to-purple-600/40 hover:from-purple-500/40 hover:to-purple-600/50 active:from-purple-500/50 active:to-purple-600/60 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
                     >
-                      ⬆ FWD
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg">⬆</span>
+                        <span className="text-xs">FWD</span>
+                      </div>
                     </Button>
 
                     {/* Middle Row */}
@@ -416,9 +511,12 @@ export default function NBLTrainingPage() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
+                      className="bg-gradient-to-b from-purple-500/30 to-purple-600/40 hover:from-purple-500/40 hover:to-purple-600/50 active:from-purple-500/50 active:to-purple-600/60 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
                     >
-                      ← LEFT
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg">←</span>
+                        <span className="text-xs">LEFT</span>
+                      </div>
                     </Button>
                     <Button
                       onTouchStart={(e) => {
@@ -431,9 +529,12 @@ export default function NBLTrainingPage() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
+                      className="bg-gradient-to-b from-purple-500/30 to-purple-600/40 hover:from-purple-500/40 hover:to-purple-600/50 active:from-purple-500/50 active:to-purple-600/60 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
                     >
-                      ↓ DOWN
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg">↓</span>
+                        <span className="text-xs">DOWN</span>
+                      </div>
                     </Button>
                     <Button
                       onTouchStart={(e) => {
@@ -446,9 +547,12 @@ export default function NBLTrainingPage() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
+                      className="bg-gradient-to-b from-purple-500/30 to-purple-600/40 hover:from-purple-500/40 hover:to-purple-600/50 active:from-purple-500/50 active:to-purple-600/60 text-white border-purple-400/50 h-12 shadow-lg shadow-purple-500/20 active:scale-95 transition-all duration-150"
                     >
-                      → RIGHT
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg">→</span>
+                        <span className="text-xs">RIGHT</span>
+                      </div>
                     </Button>
 
                     {/* Bottom Row */}
@@ -610,6 +714,126 @@ export default function NBLTrainingPage() {
           </div>
         </div>
       </div>
+
+      {/* Weight/Buoyancy Control Panel */}
+      {showWeightControls && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="bg-gradient-to-br from-purple-900/95 to-indigo-900/95 backdrop-blur-md border border-white/20 shadow-2xl max-w-md w-full mx-4">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <Settings className="w-5 h-5" />
+                <span>Weight & Buoyancy Controls</span>
+              </CardTitle>
+              <CardDescription className="text-purple-200">
+                Adjust your astronaut's weight and buoyancy for different training scenarios
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Environment Selector */}
+              <div>
+                <label className="text-sm font-medium text-white mb-3 block">Training Environment</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    onClick={() => changeEnvironment('space')}
+                    variant={trainingEnvironment === 'space' ? 'default' : 'outline'}
+                    className={`text-xs ${trainingEnvironment === 'space' ? 'bg-purple-600' : 'border-white/20 text-white hover:bg-white/10'}`}
+                  >
+                    🚀 Space
+                  </Button>
+                  <Button
+                    onClick={() => changeEnvironment('underwater')}
+                    variant={trainingEnvironment === 'underwater' ? 'default' : 'outline'}
+                    className={`text-xs ${trainingEnvironment === 'underwater' ? 'bg-blue-600' : 'border-white/20 text-white hover:bg-white/10'}`}
+                  >
+                    <Waves className="w-3 h-3 mr-1" />
+                    Underwater
+                  </Button>
+                  <Button
+                    onClick={() => changeEnvironment('lunar')}
+                    variant={trainingEnvironment === 'lunar' ? 'default' : 'outline'}
+                    className={`text-xs ${trainingEnvironment === 'lunar' ? 'bg-gray-600' : 'border-white/20 text-white hover:bg-white/10'}`}
+                  >
+                    <Moon className="w-3 h-3 mr-1" />
+                    Lunar
+                  </Button>
+                </div>
+              </div>
+
+              {/* Weight Control */}
+              <div>
+                <label className="text-sm font-medium text-white mb-2 block">
+                  Weight: {weight > 0 ? '+' : ''}{weight.toFixed(1)} kg
+                </label>
+                <input
+                  type="range"
+                  min="-1"
+                  max="1"
+                  step="0.1"
+                  value={weight}
+                  onChange={(e) => adjustWeight(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-xs text-white/70 mt-1">
+                  <span>Light (-1)</span>
+                  <span>Neutral (0)</span>
+                  <span>Heavy (+1)</span>
+                </div>
+              </div>
+
+              {/* Buoyancy Control */}
+              <div>
+                <label className="text-sm font-medium text-white mb-2 block">
+                  Buoyancy: {buoyancy > 0 ? '+' : ''}{buoyancy.toFixed(1)}
+                </label>
+                <input
+                  type="range"
+                  min="-1"
+                  max="1"
+                  step="0.1"
+                  value={buoyancy}
+                  onChange={(e) => adjustBuoyancy(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-xs text-white/70 mt-1">
+                  <span>Sink (-1)</span>
+                  <span>Neutral (0)</span>
+                  <span>Float (+1)</span>
+                </div>
+              </div>
+
+              {/* Current Settings Display */}
+              <div className="p-3 bg-white/10 rounded-lg border border-white/20">
+                <div className="text-xs text-white space-y-1">
+                  <div><strong>Environment:</strong> {trainingEnvironment.charAt(0).toUpperCase() + trainingEnvironment.slice(1)}</div>
+                  <div><strong>Weight:</strong> {weight > 0 ? 'Heavy' : weight < 0 ? 'Light' : 'Normal'}</div>
+                  <div><strong>Buoyancy:</strong> {buoyancy > 0 ? 'Floating' : buoyancy < 0 ? 'Sinking' : 'Neutral'}</div>
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => setShowWeightControls(false)}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+                >
+                  Apply Settings
+                </Button>
+                <Button
+                  onClick={() => {
+                    setWeight(0)
+                    setBuoyancy(0)
+                    setTrainingEnvironment('space')
+                    setShowWeightControls(false)
+                  }}
+                  variant="outline"
+                  className="flex-1 border-white/20 text-white hover:bg-white/10"
+                >
+                  Reset
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

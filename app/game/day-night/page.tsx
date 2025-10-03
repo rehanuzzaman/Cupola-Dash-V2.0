@@ -212,19 +212,32 @@ export default function DayNightPage() {
             Back
           </Button>
         </Link>
-        <div className="flex items-center space-x-3 text-white">
+        <div className="flex items-center space-x-4 text-white">
           <Badge
             variant="secondary"
             className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 text-xs"
           >
             <Globe className="w-3 h-3 mr-1" />
-            Day/Night
+            Orbital Cycles
           </Badge>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-blue-400">{orbitCount}</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 px-3 py-2 rounded-lg border border-blue-400/50">
+            <span className="text-sm font-bold text-blue-300">Orbits:</span>
+            <span className="text-lg font-bold text-blue-400">{orbitCount}</span>
           </div>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-yellow-400">{sunriseCount}</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-yellow-600/30 to-orange-600/30 px-3 py-2 rounded-lg border border-yellow-400/50">
+            <span className="text-sm font-bold text-yellow-300">Sunrises:</span>
+            <span className="text-lg font-bold text-yellow-400">{sunriseCount}</span>
+          </div>
+          <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg border ${
+            getTimeDescription(timeOfDay[0]) === "Day" ? "bg-gradient-to-r from-yellow-600/30 to-orange-600/30 border-yellow-400/50" :
+            getTimeDescription(timeOfDay[0]) === "Dawn" ? "bg-gradient-to-r from-orange-600/30 to-pink-600/30 border-orange-400/50" :
+            getTimeDescription(timeOfDay[0]) === "Dusk" ? "bg-gradient-to-r from-pink-600/30 to-purple-600/30 border-pink-400/50" :
+            "bg-gradient-to-r from-blue-600/30 to-indigo-600/30 border-blue-400/50"
+          }`}>
+            <span className="text-sm font-bold text-white">Current:</span>
+            <span className={`text-lg font-bold ${getTimeColor(timeOfDay[0])}`}>
+              {getTimeDescription(timeOfDay[0])}
+            </span>
           </div>
         </div>
       </div>
@@ -268,20 +281,52 @@ export default function DayNightPage() {
               <CardDescription className="text-purple-200 text-xs">ISS orbit simulation</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-white">Time Position</label>
-                <Slider
-                  value={timeOfDay}
-                  onValueChange={setTimeOfDay}
-                  max={1}
-                  step={0.01}
-                  className="w-full [&_[role=slider]]:bg-gradient-to-r [&_[role=slider]]:from-purple-500 [&_[role=slider]]:to-pink-500"
-                />
-                <div className="flex justify-between text-xs text-purple-200">
-                  <span>Dawn</span>
-                  <span>Day</span>
-                  <span>Dusk</span>
-                  <span>Night</span>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-white">Time Position</label>
+                  <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    getTimeDescription(timeOfDay[0]) === "Day" ? "bg-yellow-600/30 text-yellow-300 border border-yellow-400/50" :
+                    getTimeDescription(timeOfDay[0]) === "Dawn" ? "bg-orange-600/30 text-orange-300 border border-orange-400/50" :
+                    getTimeDescription(timeOfDay[0]) === "Dusk" ? "bg-pink-600/30 text-pink-300 border border-pink-400/50" :
+                    "bg-blue-600/30 text-blue-300 border border-blue-400/50"
+                  }`}>
+                    {getTimeDescription(timeOfDay[0])}
+                  </div>
+                </div>
+                
+                <div className="relative">
+                  <Slider
+                    value={timeOfDay}
+                    onValueChange={setTimeOfDay}
+                    max={1}
+                    step={0.01}
+                    className="w-full [&_[role=slider]]:bg-gradient-to-r [&_[role=slider]]:from-purple-500 [&_[role=slider]]:to-pink-500"
+                  />
+                  <div className="flex justify-between text-xs text-purple-200 mt-2">
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 bg-orange-400 rounded-full mr-1"></div>
+                      Dawn
+                    </span>
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 bg-yellow-400 rounded-full mr-1"></div>
+                      Day
+                    </span>
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 bg-pink-400 rounded-full mr-1"></div>
+                      Dusk
+                    </span>
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full mr-1"></div>
+                      Night
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg border border-blue-400/30">
+                  <div className="text-xs text-blue-200 mb-1">Current Phase</div>
+                  <div className="text-sm font-bold text-white">
+                    {Math.round(timeOfDay[0] * 100)}% through cycle
+                  </div>
                 </div>
               </div>
 

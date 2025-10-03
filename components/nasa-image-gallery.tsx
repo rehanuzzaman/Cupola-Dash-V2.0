@@ -20,25 +20,45 @@ interface NASAImageGalleryProps {
   query?: string
   title?: string
   description?: string
+  category?: string
+  source?: "nasa" | "flickr" | "research"
 }
 
 export function NASAImageGallery({
   query = "ISS Earth",
   title = "NASA Image Gallery",
   description = "Real images from NASA's archives",
+  category = "general",
+  source = "nasa"
 }: NASAImageGalleryProps) {
   const [images, setImages] = useState<NASAImage[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<NASAImage | null>(null)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   const fetchImages = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/nasa-images?q=${encodeURIComponent(query)}`)
+      let apiUrl = ""
+      
+      // Choose API endpoint based on source
+      switch (source) {
+        case "flickr":
+          apiUrl = `/api/nasa-flickr?q=${encodeURIComponent(query)}`
+          break
+        case "research":
+          apiUrl = `/api/nasa-research?category=${encodeURIComponent(category)}`
+          break
+        default:
+          apiUrl = `/api/nasa-images?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`
+      }
+      
+      const response = await fetch(apiUrl)
       const data = await response.json()
 
       if (data.success) {
-        setImages(data.images)
+        setImages(data.images || data.data?.experiments || [])
+        setLastUpdate(new Date())
       }
     } catch (error) {
       console.error("Failed to fetch NASA images:", error)
@@ -49,6 +69,10 @@ export function NASAImageGallery({
 
   useEffect(() => {
     fetchImages()
+    
+    // Auto-refresh images every 2 minutes
+    const interval = setInterval(fetchImages, 120000)
+    return () => clearInterval(interval)
   }, [query])
 
   const formatDate = (dateString: string) => {
@@ -80,7 +104,14 @@ export function NASAImageGallery({
                 <Camera className="w-5 h-5 text-primary" />
                 <span>{title}</span>
               </CardTitle>
-              <CardDescription>{description}</CardDescription>
+              <CardDescription>
+                {description}
+                {lastUpdate && (
+                  <span className="block text-xs text-green-500 mt-1">
+                    Last updated: {lastUpdate.toLocaleTimeString()}
+                  </span>
+                )}
+              </CardDescription>
             </div>
             <Button onClick={fetchImages} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4" />

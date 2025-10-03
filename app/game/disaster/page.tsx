@@ -226,18 +226,25 @@ export default function DisasterResponsePage() {
   const [responded, setResponded] = useState<number[]>([])
   const [gameStarted, setGameStarted] = useState(false)
   const [responseActions, setResponseActions] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   const handleDisasterClick = (disaster: any) => {
-    setSelectedDisaster(disaster)
-    if (!responded.includes(disaster.id)) {
-      setResponded([...responded, disaster.id])
-      setScore(score + 300)
-      
-      // Update progress (20% per disaster event, 100% when all 5 are responded to)
-      const newProgress = Math.min(100, (responded.length + 1) * 20)
-      localStorage.setItem(`levelProgress_4`, newProgress.toString())
+    try {
+      setError(null)
+      setSelectedDisaster(disaster)
+      if (!responded.includes(disaster.id)) {
+        setResponded([...responded, disaster.id])
+        setScore(score + 300)
+        
+        // Update progress (20% per disaster event, 100% when all 5 are responded to)
+        const newProgress = Math.min(100, (responded.length + 1) * 20)
+        localStorage.setItem(`levelProgress_4`, newProgress.toString())
+      }
+      if (!gameStarted) setGameStarted(true)
+    } catch (err) {
+      setError("Failed to respond to disaster. Please try again.")
+      console.error("Disaster response error:", err)
     }
-    if (!gameStarted) setGameStarted(true)
   }
 
   const resetGame = () => {
@@ -246,6 +253,7 @@ export default function DisasterResponsePage() {
     setSelectedDisaster(null)
     setGameStarted(false)
     setResponseActions([])
+    setError(null)
   }
 
   const getSeverityColor = (severity: string) => {
@@ -301,7 +309,7 @@ export default function DisasterResponsePage() {
             Back
           </Button>
         </Link>
-        <div className="flex items-center space-x-3 text-white">
+        <div className="flex items-center space-x-4 text-white">
           <Badge
             variant="secondary"
             className="bg-gradient-to-r from-red-600 to-orange-600 text-white border-0 text-xs"
@@ -309,11 +317,13 @@ export default function DisasterResponsePage() {
             <AlertTriangle className="w-3 h-3 mr-1" />
             Disaster Response
           </Badge>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-red-400">{score}</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-red-600/30 to-orange-600/30 px-3 py-2 rounded-lg border border-red-400/50">
+            <span className="text-sm font-bold text-red-300">Score:</span>
+            <span className="text-lg font-bold text-red-400">{score}</span>
           </div>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-green-400">{responded.length}/5</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-green-600/30 to-emerald-600/30 px-3 py-2 rounded-lg border border-green-400/50">
+            <span className="text-sm font-bold text-green-300">Responded:</span>
+            <span className="text-lg font-bold text-green-400">{responded.length}/5</span>
           </div>
         </div>
       </div>
@@ -326,13 +336,22 @@ export default function DisasterResponsePage() {
             </Suspense>
           </Canvas>
 
-          <div className="absolute top-2 left-2 right-2 lg:right-auto lg:max-w-xs">
+          <div className="absolute top-2 left-2 right-2 lg:right-auto lg:max-w-xs space-y-2">
             <div className="bg-gradient-to-r from-red-900/90 to-orange-900/90 backdrop-blur-md border border-white/20 rounded-lg px-3 py-2 shadow-lg">
               <div className="flex items-center space-x-2 text-xs text-white">
                 <Eye className="w-3 h-3 text-red-400 flex-shrink-0" />
                 <span>Click disaster events to coordinate response</span>
               </div>
             </div>
+            
+            {error && (
+              <div className="bg-gradient-to-r from-red-900/90 to-pink-900/90 backdrop-blur-md border border-red-400/50 rounded-lg px-3 py-2 shadow-lg">
+                <div className="flex items-center space-x-2 text-xs text-white">
+                  <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="absolute bottom-2 right-2">

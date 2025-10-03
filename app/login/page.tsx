@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,6 +33,24 @@ export default function LoginPage() {
       window.location.href = "/levels"
     }
   }
+
+  // Keyboard navigation for avatars
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
+        setSelectedAvatar((prev) => Math.max(1, prev - 1))
+      } else if (event.key === "ArrowRight") {
+        setSelectedAvatar((prev) => Math.min(astronautAvatars.length, prev + 1))
+      } else if (event.key === "Enter") {
+        handleStartMission()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [selectedAvatar, astronautName])
 
   return (
     <div className="min-h-screen iss-bg stars-bg flex flex-col p-4 relative overflow-hidden">

@@ -3,7 +3,7 @@
 import { Suspense, useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, Sphere, Stars, Sparkles } from "@react-three/drei"
+import { OrbitControls, Sphere, Stars, Sparkles, Html } from "@react-three/drei"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -211,18 +211,25 @@ export default function WeatherMonitoringPage() {
   const [score, setScore] = useState(0)
   const [monitored, setMonitored] = useState<number[]>([])
   const [gameStarted, setGameStarted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleWeatherClick = (weather: any) => {
-    setSelectedWeather(weather)
-    if (!monitored.includes(weather.id)) {
-      setMonitored([...monitored, weather.id])
-      setScore(score + 200)
-      
-      // Update progress (20% per weather system, 100% when all 5 are monitored)
-      const newProgress = Math.min(100, (monitored.length + 1) * 20)
-      localStorage.setItem(`levelProgress_3`, newProgress.toString())
+    try {
+      setError(null)
+      setSelectedWeather(weather)
+      if (!monitored.includes(weather.id)) {
+        setMonitored([...monitored, weather.id])
+        setScore(score + 200)
+        
+        // Update progress (20% per weather system, 100% when all 5 are monitored)
+        const newProgress = Math.min(100, (monitored.length + 1) * 20)
+        localStorage.setItem(`levelProgress_3`, newProgress.toString())
+      }
+      if (!gameStarted) setGameStarted(true)
+    } catch (err) {
+      setError("Failed to monitor weather system. Please try again.")
+      console.error("Weather monitoring error:", err)
     }
-    if (!gameStarted) setGameStarted(true)
   }
 
   const resetGame = () => {
@@ -230,6 +237,7 @@ export default function WeatherMonitoringPage() {
     setMonitored([])
     setSelectedWeather(null)
     setGameStarted(false)
+    setError(null)
   }
 
   const getIntensityColor = (intensity: string) => {
@@ -251,19 +259,21 @@ export default function WeatherMonitoringPage() {
             Back
           </Button>
         </Link>
-        <div className="flex items-center space-x-3 text-white">
+        <div className="flex items-center space-x-4 text-white">
           <Badge
             variant="secondary"
             className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0 text-xs"
           >
             <CloudRain className="w-3 h-3 mr-1" />
-            Weather
+            Weather Monitoring
           </Badge>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-blue-400">{score}</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 px-3 py-2 rounded-lg border border-blue-400/50">
+            <span className="text-sm font-bold text-blue-300">Score:</span>
+            <span className="text-lg font-bold text-blue-400">{score}</span>
           </div>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-green-400">{monitored.length}/5</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-green-600/30 to-emerald-600/30 px-3 py-2 rounded-lg border border-green-400/50">
+            <span className="text-sm font-bold text-green-300">Monitored:</span>
+            <span className="text-lg font-bold text-green-400">{monitored.length}/5</span>
           </div>
         </div>
       </div>
@@ -276,13 +286,22 @@ export default function WeatherMonitoringPage() {
             </Suspense>
           </Canvas>
 
-          <div className="absolute top-2 left-2 right-2 lg:right-auto lg:max-w-xs">
+          <div className="absolute top-2 left-2 right-2 lg:right-auto lg:max-w-xs space-y-2">
             <div className="bg-gradient-to-r from-blue-900/90 to-cyan-900/90 backdrop-blur-md border border-white/20 rounded-lg px-3 py-2 shadow-lg">
               <div className="flex items-center space-x-2 text-xs text-white">
                 <Eye className="w-3 h-3 text-cyan-400 flex-shrink-0" />
                 <span>Click weather systems to monitor</span>
               </div>
             </div>
+            
+            {error && (
+              <div className="bg-gradient-to-r from-red-900/90 to-pink-900/90 backdrop-blur-md border border-red-400/50 rounded-lg px-3 py-2 shadow-lg">
+                <div className="flex items-center space-x-2 text-xs text-white">
+                  <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="absolute bottom-2 right-2">
