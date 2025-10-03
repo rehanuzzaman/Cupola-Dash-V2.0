@@ -3,7 +3,7 @@
 import { Suspense, useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, Sphere, Stars, Sparkles } from "@react-three/drei"
+import { OrbitControls, Sphere, Stars, Sparkles, Html } from "@react-three/drei"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -98,7 +98,7 @@ function EarthDisaster({ onDisasterClick }: { onDisasterClick: (disaster: any) =
   const convertToSphereCoords = (lon: number, lat: number) => {
     const phi = (90 - lat) * (Math.PI / 180)
     const theta = (lon + 180) * (Math.PI / 180)
-    const radius = 2
+    const radius = 2.05  // Slightly outside Earth surface for better visibility
 
     return [radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi), radius * Math.sin(phi) * Math.sin(theta)]
   }
@@ -124,8 +124,12 @@ function EarthDisaster({ onDisasterClick }: { onDisasterClick: (disaster: any) =
     <group>
       <Sphere ref={meshRef} args={[2, 128, 128]}>
         <meshStandardMaterial
-          map={new THREE.TextureLoader().load("/earth-texture-map.png")}
-          normalMap={new THREE.TextureLoader().load("/earth-normal-map.png")}
+          map={new THREE.TextureLoader().load("/earth-texture-map.png", undefined, undefined, (error) => {
+            console.warn("Earth texture failed to load:", error)
+          })}
+          normalMap={new THREE.TextureLoader().load("/earth-normal-map.png", undefined, undefined, (error) => {
+            console.warn("Earth normal map failed to load:", error)
+          })}
           roughness={0.7}
           metalness={0.1}
           bumpScale={0.05}
@@ -136,9 +140,9 @@ function EarthDisaster({ onDisasterClick }: { onDisasterClick: (disaster: any) =
         const [x, y, z] = convertToSphereCoords(disaster.position[0], disaster.position[1])
         return (
           <group key={disaster.id} position={[x, y, z]}>
-            {/* Disaster marker */}
+            {/* Disaster marker - more visible */}
             <Sphere
-              args={[0.1, 16, 16]}
+              args={[0.12, 16, 16]}
               onPointerEnter={() => setHovered(disaster.id)}
               onPointerLeave={() => setHovered(null)}
               onClick={() => onDisasterClick(disaster)}
@@ -146,17 +150,31 @@ function EarthDisaster({ onDisasterClick }: { onDisasterClick: (disaster: any) =
               <meshBasicMaterial 
                 color={hovered === disaster.id ? "#ffffff" : disaster.color} 
                 transparent 
-                opacity={0.9} 
+                opacity={1.0}
+                emissive={disaster.color}
+                emissiveIntensity={0.3}
               />
             </Sphere>
-            {/* Pulsing alert effect */}
-            <Sphere args={[0.15, 16, 16]}>
-              <meshBasicMaterial color={disaster.color} transparent opacity={0.3} />
+            {/* Pulsing alert effect - more visible */}
+            <Sphere args={[0.18, 16, 16]}>
+              <meshBasicMaterial color={disaster.color} transparent opacity={0.4} />
             </Sphere>
-            {/* Priority indicator */}
-            <Sphere args={[0.05, 8, 8]} position={[0, 0.2, 0]}>
-              <meshBasicMaterial color={disaster.priority === 1 ? "#ff0000" : disaster.priority === 2 ? "#ffaa00" : "#00aa00"} />
+            {/* Priority indicator - more prominent */}
+            <Sphere args={[0.08, 8, 8]} position={[0, 0.25, 0]}>
+              <meshBasicMaterial 
+                color={disaster.priority === 1 ? "#ff0000" : disaster.priority === 2 ? "#ffaa00" : "#00aa00"}
+                emissive={disaster.priority === 1 ? "#ff0000" : disaster.priority === 2 ? "#ffaa00" : "#00aa00"}
+                emissiveIntensity={0.2}
+              />
             </Sphere>
+            {/* Sparkles for better visibility */}
+            <Sparkles 
+              count={15} 
+              scale={0.2} 
+              size={1.5} 
+              speed={0.8} 
+              color={disaster.color} 
+            />
             {/* Disaster info */}
             {hovered === disaster.id && (
               <Html distanceFactor={8}>
@@ -228,9 +246,25 @@ export default function DisasterResponsePage() {
   const [responseActions, setResponseActions] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
 
+  // Load progress from localStorage
+  useEffect(() => {
+    try {
+      const savedProgress = localStorage.getItem(`levelProgress_4`)
+      if (savedProgress) {
+        // Progress is already handled in the click handler
+      }
+    } catch (err) {
+      console.warn("Failed to load progress:", err)
+    }
+  }, [])
+
   const handleDisasterClick = (disaster: any) => {
     try {
       setError(null)
+      if (!disaster || !disaster.id) {
+        throw new Error("Invalid disaster data")
+      }
+      
       setSelectedDisaster(disaster)
       if (!responded.includes(disaster.id)) {
         setResponded([...responded, disaster.id])
