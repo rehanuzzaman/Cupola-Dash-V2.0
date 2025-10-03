@@ -1,13 +1,13 @@
 "use client"
 
-import { Suspense, useRef, useState } from "react"
+import { Suspense, useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import { Canvas, useFrame } from "@react-three/fiber"
 import { OrbitControls, Sphere, Html, Stars, Sparkles } from "@react-three/drei"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Eye, Info, RotateCcw } from "lucide-react"
+import { ArrowLeft, Eye, Info, RotateCcw, User, Settings, MapPin, Navigation } from "lucide-react"
 import * as THREE from "three"
 
 // Earth locations with educational content
@@ -77,16 +77,16 @@ function LocationMarker({ position, location, hovered, onHover, onClick }: {
   return (
     <group ref={groupRef} position={position}>
       {/* Pulsing outer ring - larger and more visible */}
-      <Sphere args={[0.12, 16, 16]}>
+      <Sphere args={[0.15, 16, 16]}>
         <meshBasicMaterial 
           color={hovered ? "#f59e0b" : "#0891b2"} 
           transparent 
-          opacity={0.4} 
+          opacity={0.6} 
         />
       </Sphere>
       {/* Main marker - more prominent */}
       <Sphere
-        args={[0.08, 16, 16]}
+        args={[0.12, 16, 16]}
         onPointerEnter={() => onHover(true)}
         onPointerLeave={() => onHover(false)}
         onClick={onClick}
@@ -96,25 +96,35 @@ function LocationMarker({ position, location, hovered, onHover, onClick }: {
           transparent 
           opacity={1.0}
           emissive={hovered ? "#f59e0b" : "#0891b2"}
-          emissiveIntensity={0.3}
+          emissiveIntensity={0.5}
         />
       </Sphere>
       {/* Glowing effect - more visible */}
-      <Sphere args={[0.16, 16, 16]}>
-        <meshBasicMaterial 
-          color={hovered ? "#f59e0b" : "#0891b2"} 
-          transparent 
-          opacity={0.2} 
-        />
-      </Sphere>
-      {/* Animated pulse ring */}
       <Sphere args={[0.2, 16, 16]}>
         <meshBasicMaterial 
           color={hovered ? "#f59e0b" : "#0891b2"} 
           transparent 
-          opacity={0.1} 
+          opacity={0.3} 
         />
       </Sphere>
+      {/* Animated pulse ring */}
+      <Sphere args={[0.25, 16, 16]}>
+        <meshBasicMaterial 
+          color={hovered ? "#f59e0b" : "#0891b2"} 
+          transparent 
+          opacity={0.15} 
+        />
+      </Sphere>
+      
+      {/* Sparkles for better visibility */}
+      <Sparkles 
+        count={20} 
+        scale={0.3} 
+        size={2} 
+        speed={0.5} 
+        color={hovered ? "#f59e0b" : "#0891b2"} 
+      />
+      
       {hovered && (
         <Html distanceFactor={6}>
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg border border-white/20">
@@ -146,7 +156,7 @@ function Earth({ onLocationClick }: { onLocationClick: (location: any) => void }
     // Convert latitude and longitude to 3D sphere coordinates
     const phi = (90 - lat) * (Math.PI / 180)  // Polar angle (0 to π)
     const theta = (lon + 180) * (Math.PI / 180)  // Azimuthal angle (0 to 2π)
-    const radius = 2.05  // Slightly outside Earth surface for visibility
+    const radius = 2.1  // Slightly outside Earth surface for better visibility
 
     // Convert spherical to Cartesian coordinates
     const x = radius * Math.sin(phi) * Math.cos(theta)
@@ -170,6 +180,7 @@ function Earth({ onLocationClick }: { onLocationClick: (location: any) => void }
 
       {earthLocations.map((location) => {
         const [x, y, z] = convertToSphereCoords(location.position[0], location.position[1])
+        console.log(`Location ${location.name}: lon=${location.position[0]}, lat=${location.position[1]} -> [${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}]`)
         return (
           <LocationMarker
             key={location.id}
@@ -239,6 +250,22 @@ export default function CupolaTrainingPage() {
   const [selectedLocation, setSelectedLocation] = useState<any>(null)
   const [score, setScore] = useState(0)
   const [discovered, setDiscovered] = useState<number[]>([])
+  const [showCharacterCustomization, setShowCharacterCustomization] = useState(false)
+  const [showNavigation, setShowNavigation] = useState(false)
+  const [character, setCharacter] = useState({
+    name: "Astronaut",
+    suit: "white",
+    helmet: "standard",
+    experience: "rookie"
+  })
+
+  // Load character data from localStorage
+  useEffect(() => {
+    const savedCharacter = localStorage.getItem('cupolaCharacter')
+    if (savedCharacter) {
+      setCharacter(JSON.parse(savedCharacter))
+    }
+  }, [])
 
   const handleLocationClick = (location: any) => {
     setSelectedLocation(location)
@@ -258,6 +285,17 @@ export default function CupolaTrainingPage() {
     setSelectedLocation(null)
   }
 
+  const saveCharacter = (newCharacter: any) => {
+    setCharacter(newCharacter)
+    localStorage.setItem('cupolaCharacter', JSON.stringify(newCharacter))
+    setShowCharacterCustomization(false)
+  }
+
+  const navigateToLocation = (location: any) => {
+    setSelectedLocation(location)
+    setShowNavigation(false)
+  }
+
   return (
     <div className="min-h-screen space-bg stars-bg flex flex-col">
       {/* Header */}
@@ -268,19 +306,43 @@ export default function CupolaTrainingPage() {
             Back
           </Button>
         </Link>
-        <div className="flex items-center space-x-3 text-white">
+        <div className="flex items-center space-x-4 text-white">
           <Badge
             variant="secondary"
             className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 text-xs"
           >
             <Eye className="w-3 h-3 mr-1" />
-            Cupola
+            Cupola Training
           </Badge>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-yellow-400">{score}</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-yellow-600/30 to-orange-600/30 px-3 py-2 rounded-lg border border-yellow-400/50">
+            <span className="text-sm font-bold text-yellow-300">Score:</span>
+            <span className="text-lg font-bold text-yellow-400">{score}</span>
           </div>
-          <div className="text-xs bg-black/20 px-2 py-1 rounded-full">
-            <span className="font-bold text-green-400">{discovered.length}/5</span>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-green-600/30 to-blue-600/30 px-3 py-2 rounded-lg border border-green-400/50">
+            <span className="text-sm font-bold text-green-300">Found:</span>
+            <span className="text-lg font-bold text-green-400">{discovered.length}/5</span>
+          </div>
+          
+          {/* Character and Navigation Controls */}
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={() => setShowCharacterCustomization(true)}
+              variant="outline"
+              size="sm"
+              className="bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border-blue-400/50 text-white hover:from-blue-500/40 hover:to-cyan-500/40"
+            >
+              <User className="w-4 h-4 mr-1" />
+              {character.name}
+            </Button>
+            <Button
+              onClick={() => setShowNavigation(true)}
+              variant="outline"
+              size="sm"
+              className="bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-green-400/50 text-white hover:from-green-500/40 hover:to-emerald-500/40"
+            >
+              <Navigation className="w-4 h-4 mr-1" />
+              Navigate
+            </Button>
           </div>
         </div>
       </div>
@@ -368,42 +430,186 @@ export default function CupolaTrainingPage() {
 
           <Card className="bg-gradient-to-br from-purple-900/80 to-pink-900/80 backdrop-blur-md border border-white/20 shadow-2xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base text-white">Progress</CardTitle>
+              <CardTitle className="text-base text-white flex items-center justify-between">
+                <span>Training Progress</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-yellow-300">Score:</span>
+                  <span className="text-lg font-bold text-yellow-400">{score}</span>
+                </div>
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
+              <div className="mb-4 p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg border border-blue-400/30">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-blue-200">Locations Discovered:</span>
+                  <span className="font-bold text-white">{discovered.length}/5</span>
+                </div>
+                <div className="w-full bg-blue-600/20 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${(discovered.length / 5) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 {earthLocations.map((location) => (
                   <div
                     key={location.id}
-                    className={`flex items-center justify-between p-2 rounded-lg transition-all duration-300 ${
+                    className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
                       discovered.includes(location.id)
                         ? "bg-gradient-to-r from-green-600/30 to-blue-600/30 border border-green-400/30"
                         : "bg-black/20 border border-white/10"
                     }`}
                   >
-                    <span className="text-xs text-white">{location.name}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-white font-medium">{location.name}</span>
+                      {discovered.includes(location.id) && (
+                        <span className="text-xs text-green-300">+100 pts</span>
+                      )}
+                    </div>
                     {discovered.includes(location.id) ? (
-                      <Badge className="bg-gradient-to-r from-green-500 to-blue-500 text-white border-0 text-xs px-2 py-0">
-                        ✨
+                      <Badge className="bg-gradient-to-r from-green-500 to-blue-500 text-white border-0 text-xs px-2 py-1">
+                        ✨ Found
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-white/30 text-white/70 text-xs px-2 py-0">
-                        ?
+                      <Badge variant="outline" className="border-white/30 text-white/70 text-xs px-2 py-1">
+                        🔍 Find
                       </Badge>
                     )}
                   </div>
                 ))}
               </div>
               {discovered.length === earthLocations.length && (
-                <div className="mt-3 p-3 bg-gradient-to-r from-yellow-600/30 to-orange-600/30 rounded-lg text-center border border-yellow-400/30">
-                  <p className="font-semibold text-yellow-400 text-sm">🎉 Complete!</p>
-                  <p className="text-xs text-yellow-200">Cupola master achieved!</p>
+                <div className="mt-4 p-4 bg-gradient-to-r from-yellow-600/30 to-orange-600/30 rounded-lg text-center border border-yellow-400/30">
+                  <p className="font-semibold text-yellow-400 text-lg">🎉 Training Complete!</p>
+                  <p className="text-sm text-yellow-200">Final Score: {score} points</p>
+                  <p className="text-xs text-yellow-300 mt-1">Cupola observation master achieved!</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Character Customization Modal */}
+      {showCharacterCustomization && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="bg-gradient-to-br from-purple-900/95 to-pink-900/95 backdrop-blur-md border border-white/20 shadow-2xl max-w-md w-full mx-4">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <User className="w-5 h-5" />
+                <span>Character Customization</span>
+              </CardTitle>
+              <CardDescription className="text-purple-200">
+                Customize your astronaut character
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-white mb-2 block">Name</label>
+                <input
+                  type="text"
+                  value={character.name}
+                  onChange={(e) => setCharacter({...character, name: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-purple-400"
+                  placeholder="Enter astronaut name"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-white mb-2 block">Suit Color</label>
+                <div className="flex space-x-2">
+                  {['white', 'blue', 'orange', 'red'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setCharacter({...character, suit: color})}
+                      className={`w-8 h-8 rounded-full border-2 ${
+                        character.suit === color ? 'border-white' : 'border-white/30'
+                      }`}
+                      style={{backgroundColor: color}}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-white mb-2 block">Experience Level</label>
+                <select
+                  value={character.experience}
+                  onChange={(e) => setCharacter({...character, experience: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-purple-400"
+                >
+                  <option value="rookie">Rookie</option>
+                  <option value="experienced">Experienced</option>
+                  <option value="veteran">Veteran</option>
+                  <option value="commander">Commander</option>
+                </select>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => saveCharacter(character)}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+                >
+                  Save Character
+                </Button>
+                <Button
+                  onClick={() => setShowCharacterCustomization(false)}
+                  variant="outline"
+                  className="flex-1 border-white/20 text-white hover:bg-white/10"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Navigation Modal */}
+      {showNavigation && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="bg-gradient-to-br from-purple-900/95 to-pink-900/95 backdrop-blur-md border border-white/20 shadow-2xl max-w-md w-full mx-4">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <Navigation className="w-5 h-5" />
+                <span>Navigate to Location</span>
+              </CardTitle>
+              <CardDescription className="text-purple-200">
+                Choose a location to observe from the Cupola
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {earthLocations.map((location) => (
+                <button
+                  key={location.id}
+                  onClick={() => navigateToLocation(location)}
+                  className="w-full p-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-left transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="w-4 h-4 text-purple-300" />
+                    <div>
+                      <div className="font-medium text-white">{location.name}</div>
+                      <div className="text-xs text-purple-200">{location.coordinates}</div>
+                    </div>
+                    {discovered.includes(location.id) && (
+                      <Badge className="bg-green-500 text-white text-xs">Visited</Badge>
+                    )}
+                  </div>
+                </button>
+              ))}
+              <Button
+                onClick={() => setShowNavigation(false)}
+                variant="outline"
+                className="w-full border-white/20 text-white hover:bg-white/10"
+              >
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

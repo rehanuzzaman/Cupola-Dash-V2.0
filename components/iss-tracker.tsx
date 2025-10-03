@@ -101,7 +101,14 @@ export function ISSTracker() {
               <Satellite className="w-5 h-5 text-primary" />
               <span>Live ISS Position</span>
             </CardTitle>
-            <CardDescription>Real-time location from NASA</CardDescription>
+            <CardDescription>
+              Real-time location from NASA
+              {lastUpdate && (
+                <span className="block text-xs text-green-500 mt-1">
+                  Last updated: {lastUpdate.toLocaleTimeString()}
+                </span>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4 text-sm">

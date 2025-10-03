@@ -14,44 +14,102 @@ export function VRMode({ onVRModeChange }: VRModeProps) {
   const [isVRSupported, setIsVRSupported] = useState(false)
   const [isVREnabled, setIsVREnabled] = useState(false)
   const [deviceType, setDeviceType] = useState<'desktop' | 'mobile' | 'unknown'>('unknown')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     // Check if device supports VR
-    const checkVRSupport = () => {
+    const checkVRSupport = async () => {
       if (typeof navigator !== 'undefined') {
-        // Check for WebXR support
-        const hasWebXR = 'xr' in navigator
-        const hasVRDisplay = 'getVRDisplays' in navigator
-        
-        // Check device type
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-        const isDesktop = !isMobile && window.innerWidth > 768
-        
-        setDeviceType(isMobile ? 'mobile' : isDesktop ? 'desktop' : 'unknown')
-        setIsVRSupported(hasWebXR || hasVRDisplay)
+        try {
+          // Check for WebXR support (modern VR/AR)
+          const hasWebXR = 'xr' in navigator
+          let webXRSupported = false
+          
+          if (hasWebXR && navigator.xr) {
+            try {
+              webXRSupported = await navigator.xr.isSessionSupported('immersive-vr')
+            } catch (error) {
+              console.log('WebXR not supported:', error)
+            }
+          }
+          
+          // Check for legacy VR support
+          const hasVRDisplay = 'getVRDisplays' in navigator
+          let legacyVRSupported = false
+          
+          if (hasVRDisplay) {
+            try {
+              const displays = await navigator.getVRDisplays()
+              legacyVRSupported = displays.length > 0
+            } catch (error) {
+              console.log('Legacy VR not supported:', error)
+            }
+          }
+          
+          // Check device type
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          const isDesktop = !isMobile && window.innerWidth > 768
+          
+          setDeviceType(isMobile ? 'mobile' : isDesktop ? 'desktop' : 'unknown')
+          setIsVRSupported(webXRSupported || legacyVRSupported)
+        } catch (error) {
+          console.error('VR support check failed:', error)
+          setError('Failed to check VR support')
+          setIsVRSupported(false)
+        } finally {
+          setIsLoading(false)
+        }
+      } else {
+        setIsLoading(false)
       }
     }
 
     checkVRSupport()
   }, [])
 
-  const handleVRToggle = () => {
+  const handleVRToggle = async () => {
     const newVREnabled = !isVREnabled
-    setIsVREnabled(newVREnabled)
-    onVRModeChange?.(newVREnabled)
     
-    if (newVREnabled) {
-      // Add VR-specific styles and behaviors
-      document.body.classList.add('vr-mode')
-      // Request fullscreen for better VR experience
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(console.error)
+    try {
+      if (newVREnabled) {
+        // Add VR-specific styles and behaviors
+        document.body.classList.add('vr-mode')
+        
+        // Request fullscreen for better VR experience
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen()
+        }
+        
+        // Add VR-specific CSS variables for better performance
+        document.documentElement.style.setProperty('--vr-enabled', '1')
+        document.documentElement.style.setProperty('--vr-perspective', '1000px')
+        
+        // Optimize for VR performance
+        document.body.style.transform = 'translateZ(0)'
+        document.body.style.willChange = 'transform'
+        
+      } else {
+        // Remove VR-specific styles
+        document.body.classList.remove('vr-mode')
+        document.documentElement.style.removeProperty('--vr-enabled')
+        document.documentElement.style.removeProperty('--vr-perspective')
+        document.body.style.transform = ''
+        document.body.style.willChange = ''
+        
+        // Exit fullscreen if active
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen()
+        }
       }
-    } else {
-      document.body.classList.remove('vr-mode')
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(console.error)
-      }
+      
+      setIsVREnabled(newVREnabled)
+      onVRModeChange?.(newVREnabled)
+      
+    } catch (error) {
+      console.error('VR toggle failed:', error)
+      // Revert state on error
+      setIsVREnabled(isVREnabled)
     }
   }
 
@@ -62,22 +120,75 @@ export function VRMode({ onVRModeChange }: VRModeProps) {
           "• Use your phone's gyroscope for head tracking",
           "• Move your device to look around",
           "• Tap and hold to interact with objects",
-          "• Use landscape mode for best experience"
+          "• Use landscape mode for best experience",
+          "• Hold device steady for optimal tracking"
         ]
       case 'desktop':
         return [
           "• Use mouse to look around",
           "• WASD keys for movement",
           "• Click and drag to rotate view",
-          "• Press F for fullscreen mode"
+          "• Press F for fullscreen mode",
+          "• Use arrow keys for fine control"
         ]
       default:
         return [
           "• Use available input methods",
           "• Look around to explore",
-          "• Interact with highlighted objects"
+          "• Interact with highlighted objects",
+          "• Ensure stable connection"
         ]
     }
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-purple-900/80 to-pink-900/80 backdrop-blur-md border border-white/20 shadow-2xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white text-base flex items-center space-x-2">
+            <Eye className="w-5 h-5 text-purple-300" />
+            <span>VR Mode</span>
+          </CardTitle>
+          <CardDescription className="text-purple-100">
+            Checking VR support...
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="text-center space-y-3">
+            <div className="animate-spin w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full mx-auto"></div>
+            <p className="text-purple-200 text-sm">Detecting VR capabilities...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-gradient-to-br from-purple-900/80 to-pink-900/80 backdrop-blur-md border border-white/20 shadow-2xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white text-base flex items-center space-x-2">
+            <Eye className="w-5 h-5 text-purple-300" />
+            <span>VR Mode</span>
+          </CardTitle>
+          <CardDescription className="text-purple-100">
+            VR support check failed
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="text-center space-y-3">
+            <div className="p-4 bg-red-600/20 rounded-lg border border-red-400/30">
+              <p className="text-red-200 text-sm font-medium">
+                {error}
+              </p>
+              <p className="text-red-300 text-xs mt-1">
+                Please refresh the page and try again
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (!isVRSupported) {

@@ -47,6 +47,44 @@ export default function LiveISSPage() {
                   query="International Space Station Earth"
                   title="ISS Earth Photography"
                   description="Recent images captured from the ISS"
+                  category="earth"
+                  source="nasa"
+                />
+              </div>
+            </div>
+
+            {/* Additional NASA Resources */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              {/* Cupola Images */}
+              <div>
+                <NASAImageGallery
+                  query="Cupola ISS"
+                  title="Cupola Observation Module"
+                  description="Views from the ISS Cupola observation window"
+                  category="cupola"
+                  source="nasa"
+                />
+              </div>
+
+              {/* NBL Training Images */}
+              <div>
+                <NASAImageGallery
+                  query="NBL Training"
+                  title="Neutral Buoyancy Lab"
+                  description="Astronaut training in the NBL"
+                  category="nbl"
+                  source="flickr"
+                />
+              </div>
+
+              {/* Research Data */}
+              <div>
+                <NASAImageGallery
+                  query="ISS Research"
+                  title="Station Research"
+                  description="Scientific experiments aboard the ISS"
+                  category="research"
+                  source="research"
                 />
               </div>
             </div>
