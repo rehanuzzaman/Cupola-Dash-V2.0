@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: "Cupola Dash",
   description:
     "Celebrate 25 years of the International Space Station through interactive learning and space exploration",
-  generator: "v0.app",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" }
